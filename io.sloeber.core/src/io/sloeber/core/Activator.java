@@ -91,7 +91,7 @@ public class Activator extends AbstractUIPlugin {
 		testKnownIssues();
 		initializeImportantVariables();
 		runPluginCoreStartInstantiatorJob();
-
+		registerListeners();
 		runInstallJob();
 		instance = this;
 
@@ -200,6 +200,8 @@ public class Activator extends AbstractUIPlugin {
 		CoreModel singCoreModel = CoreModel.getDefault();
 		singCoreModel.addCProjectDescriptionListener(new ConfigurationChangeListener(),
 				CProjectDescriptionEvent.ABOUT_TO_APPLY);
+		Common.log(new Status(IStatus.WARNING, Activator.getId(),
+				"Listeners are registered"));
 	}
 
 	private static void initializeImportantVariables() {
@@ -250,7 +252,7 @@ public class Activator extends AbstractUIPlugin {
 				if (InstancePreferences.useBonjour()) {
 					SloeberNetworkDiscovery.start();
 				}
-				registerListeners();
+				
 				return Status.OK_STATUS;
 			}
 
