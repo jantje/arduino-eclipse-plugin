@@ -34,6 +34,7 @@ public class NightlyBoardPatronTest {
     private static int myTotalFails = 0;
     private static int maxFails = 40;
     private static CompileOptions myCompileOptions;
+	private static boolean deleteProjects =false; //delete the projects after trying to build them
 
     @SuppressWarnings("unused")
 	public NightlyBoardPatronTest(String name, MCUBoard boardID, Examples example) {
@@ -44,6 +45,7 @@ public class NightlyBoardPatronTest {
     @SuppressWarnings("rawtypes")
     @Parameters(name = "{0}")
     public static Collection examples() {
+    	Shared.setDeleteProjects(deleteProjects );
         Shared.waitForAllJobsToFinish();
         Arduino.installLatestSamDBoards();
         LibraryManager.installLibrary("RTCZero");

@@ -23,6 +23,6 @@ public class releaseTesting_takes_very_long {
     @BeforeClass
     public static void setUp() {
     	Preferences.setUseBonjour(false);
-        Shared.deleteProjects=true;
+        Shared.setDeleteProjects(true);
     }
 }

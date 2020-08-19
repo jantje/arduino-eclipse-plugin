@@ -34,7 +34,13 @@ import io.sloeber.providers.MCUBoard;
 
 @SuppressWarnings("nls")
 public class Shared {
-	public static boolean deleteProjects = true;
+	private static boolean deleteProjects = true;
+
+
+	public static void setDeleteProjects(boolean deleteProjects) {
+		Shared.deleteProjects = deleteProjects;
+	}
+
 	private static int myLocalBuildCounter;
 	private static int myTestCounter;
 	private static String myLastFailMessage = new String();
