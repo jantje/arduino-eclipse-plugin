@@ -34,7 +34,10 @@ public class IndexerListener implements IIndexChangeListener, IIndexerStateListe
 		IProject project = event.getAffectedProject().getProject();
 		try {
 			if (project.hasNature(Const.ARDUINO_NATURE_ID)) {
-				this.ChangedProjects.add(project);
+				if(this.ChangedProjects.add(project)) {
+				Common.log(new Status(IStatus.WARNING, Activator.getId(),
+						"index of project "+project.getName()+" changed"));
+				}
 			}
 		} catch (CoreException e) {
 			// ignore
@@ -47,6 +50,8 @@ public class IndexerListener implements IIndexChangeListener, IIndexerStateListe
 	public void indexChanged(IIndexerStateEvent event) {
 
 		if (event.indexerIsIdle()) {
+			Common.log(new Status(IStatus.WARNING, Activator.getId(),
+					"indexer is idle")); 
 			if (InstancePreferences.getAutomaticallyImportLibraries()) {
 				if ((this.installLibJob == null) || (this.installLibJob.getState() == Job.NONE)) {
 					this.installLibJob = new Job("Adding Arduino libs...") { //$NON-NLS-1$
@@ -56,12 +61,15 @@ public class IndexerListener implements IIndexChangeListener, IIndexerStateListe
 							try {
 								for (IProject curProject : IndexerListener.this.ChangedProjects) {
 									Libraries.checkLibraries(curProject);
+									Common.log(new Status(IStatus.WARNING, Activator.getId(),
+											"libraries for project "+curProject.getName()+" added"));
 								}
 								IndexerListener.this.ChangedProjects.clear();
 							} catch (Exception e) {
 								Common.log(new Status(IStatus.WARNING, Activator.getId(),
 										Messages.Failed_To_Add_Libraries, e));
 							}
+
 							IndexerListener.this.installLibJob = null;
 							return Status.OK_STATUS;
 						}

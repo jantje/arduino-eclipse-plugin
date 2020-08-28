@@ -295,7 +295,6 @@ rights to a jury trial in any resulting litigation.&lt;/p&gt;
    </plugins>
 
    <features>
-      <feature id="io.sloeber.feature" installMode="root"/>
       <feature id="org.eclipse.cdt"/>
       <feature id="org.eclipse.cdt.autotools"/>
       <feature id="org.eclipse.cdt.gdb"/>
@@ -347,6 +346,7 @@ rights to a jury trial in any resulting litigation.&lt;/p&gt;
       <feature id="org.eclipse.rse.core"/>
       <feature id="org.eclipse.cdt.native"/>
       <feature id="ilg.gnumcueclipse.debug.gdbjtag.openocd.feature"/>
+      <feature id="io.sloeber.feature"/>
    </features>
 
    <configurations>

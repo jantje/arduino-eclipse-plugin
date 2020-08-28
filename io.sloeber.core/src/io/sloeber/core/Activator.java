@@ -6,9 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
-
-import org.apache.commons.io.IOUtils;
 import org.eclipse.cdt.core.CCorePlugin;
 import org.eclipse.cdt.core.model.CoreModel;
 import org.eclipse.cdt.core.settings.model.CProjectDescriptionEvent;
@@ -26,11 +23,12 @@ import org.eclipse.core.runtime.jobs.IJobManager;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
-
 import cc.arduino.packages.discoverers.SloeberNetworkDiscovery;
 import io.sloeber.core.common.Common;
 import io.sloeber.core.common.ConfigurationPreferences;
@@ -39,19 +37,6 @@ import io.sloeber.core.listeners.ConfigurationChangeListener;
 import io.sloeber.core.listeners.IndexerListener;
 import io.sloeber.core.managers.InternalPackageManager;
 
-abstract class FamilyJob extends Job {
-	static final String MY_FAMILY = "myJobFamily"; //$NON-NLS-1$
-
-	public FamilyJob(String name) {
-		super(name);
-	}
-
-	@Override
-	public boolean belongsTo(Object family) {
-		return family == MY_FAMILY;
-	}
-
-}
 
 /**
  * generated code
@@ -80,10 +65,12 @@ public class Activator extends AbstractUIPlugin {
 			'/', 'e', 'c', 'l', 'i', 'p', 's', 'e', '/', 'd', 'o', 'w', 'n', 'l', 'o', 'a', 'd', '/', 'p', 'l', 'u',
 			'g', 'i', 'n', 'S', 't', 'a', 'r', 't', '.', 'h', 't', 'm', 'l', '?', 's', '=' };
 	private static final String PLUGIN_ID = "io.sloeber.core";
-	private static Boolean isPatron = null;
+
 
 	@Override
 	public void start(BundleContext context) throws Exception {
+		super.start(context);
+		instance = this;
 		IPath installPath = ConfigurationPreferences.getInstallationPath();
 		installPath.toFile().mkdirs();
 		IPath downloadPath = ConfigurationPreferences.getInstallationPathDownload();
@@ -91,17 +78,15 @@ public class Activator extends AbstractUIPlugin {
 		testKnownIssues();
 		initializeImportantVariables();
 		runPluginCoreStartInstantiatorJob();
-		registerListeners();
+		
 		runInstallJob();
-		instance = this;
+		
 
 		// add required properties for Arduino serial port on linux, if not
 		// defined
 		if (Platform.getOS().equals(Platform.OS_LINUX) && System.getProperty(ENV_KEY_GNU_SERIAL_PORTS) == null) {
 			System.setProperty(ENV_KEY_GNU_SERIAL_PORTS, ENV_VALUE_GNU_SERIAL_PORTS_LINUX);
 		}
-		remind();
-
 	}
 
 	public static Activator getDefault() {
@@ -141,7 +126,7 @@ public class Activator extends AbstractUIPlugin {
 			}
 		}
 
-		if (installPathToLong()) {
+		if (isInstallPathToLong()) {
 			errorString += errorString + addString;
 			errorString += "Due to issues with long pathnames on Windows, the Sloeber installation path must be less than 40 characters. \n";
 			errorString += "Your current path: " + installPath.toString();
@@ -185,7 +170,7 @@ public class Activator extends AbstractUIPlugin {
 	 *
 	 * @return true if the install path is to deep on windows
 	 */
-	private static boolean installPathToLong() {
+	private static boolean isInstallPathToLong() {
 		IPath installPath = ConfigurationPreferences.getInstallationPath();
 		if (Platform.getOS().equals(Platform.OS_WIN32)) {
 			return installPath.toString().length() > 40;
@@ -200,8 +185,6 @@ public class Activator extends AbstractUIPlugin {
 		CoreModel singCoreModel = CoreModel.getDefault();
 		singCoreModel.addCProjectDescriptionListener(new ConfigurationChangeListener(),
 				CProjectDescriptionEvent.ABOUT_TO_APPLY);
-		Common.log(new Status(IStatus.WARNING, Activator.getId(),
-				"Listeners are registered"));
 	}
 
 	private static void initializeImportantVariables() {
@@ -245,6 +228,7 @@ public class Activator extends AbstractUIPlugin {
 				monitor.beginTask("Sit back, relax and watch us work for a little while ..", IProgressMonitor.UNKNOWN);
 				addFileAssociations();
 				makeOurOwnCustomBoards_txt();
+				registerListeners();
 
 				InternalPackageManager.startup_Pluging(monitor);
 
@@ -270,11 +254,8 @@ public class Activator extends AbstractUIPlugin {
 	 */
 	@Override
 	public void stop(BundleContext context) throws Exception {
-		IJobManager jobMan = Job.getJobManager();
-		jobMan.cancel(FamilyJob.MY_FAMILY);
-		jobMan.join(FamilyJob.MY_FAMILY, null);
-		instance = null;
 		super.stop(context);
+		instance = null;
 	}
 
 	/**
@@ -361,7 +342,6 @@ public class Activator extends AbstractUIPlugin {
 	 * Add the .ino and .pde as file extensions to the cdt environment
 	 */
 	private static void addFileAssociations() {
-
 		// add the extension to the content type manager as a binary
 		final IContentTypeManager ctm = Platform.getContentTypeManager();
 		final IContentType ctbin = ctm.getContentType(CCorePlugin.CONTENT_TYPE_CXXSOURCE);
@@ -372,61 +352,7 @@ public class Activator extends AbstractUIPlugin {
 			Common.log(new Status(IStatus.WARNING, Activator.getId(),
 					"Failed to add *.ino and *.pde as file extensions.", e));
 		}
-
 	}
 
-	static void remind() {
 
-		Job job = new FamilyJob("pluginReminder") {
-			@Override
-			protected IStatus run(IProgressMonitor monitor) {
-
-				IEclipsePreferences myScope = InstanceScope.INSTANCE.getNode(NODE_ARDUINO);
-				int curFsStatus = myScope.getInt(FLAG_START, 0);
-				int curFuStatus = myScope.getInt(UPLOAD_FLAG, 0);
-				int curFbStatus = myScope.getInt(BUILD_FLAG, 0);
-				int curFsiStatus = curFsStatus + curFuStatus + curFbStatus;
-				int lastFsiStatus = myScope.getInt(LOCAL_FLAG, 0);
-				final int trigger=30;
-				if ((curFsiStatus - lastFsiStatus) < 0) {
-					lastFsiStatus = curFsiStatus - (trigger+1);
-				}
-				if ((curFsiStatus - lastFsiStatus) >= trigger) {
-					myScope.putInt(LOCAL_FLAG, curFsiStatus);
-					try {
-						myScope.flush();
-					} catch (BackingStoreException e) {
-						// this should not happen
-					}
-					if (!isPatron()) {
-						PleaseHelp.doHelp(HELP_LOC);
-					}
-				}
-				remind();
-				return Status.OK_STATUS;
-			}
-		};
-		job.setPriority(Job.DECORATE);
-		job.schedule(60000);
-	}
-
-	static boolean isPatron() {
-		if (isPatron != null) {
-			return isPatron.booleanValue();
-		}
-		String systemhash = ConfigurationPreferences.getSystemHash();
-
-		try {
-			URL url = new URL(HELP_LOC + "?systemhash=" + systemhash);
-			String content= IOUtils.toString( url, Charset.defaultCharset());
-			isPatron = Boolean.valueOf(content.length() < 1000);
-
-		} catch ( Exception e) {
-			//Ignore the download error. This will make the code try again later
-		}
-		if (isPatron != null) {
-			return isPatron.booleanValue();
-		}
-		return false;
-	}
 }

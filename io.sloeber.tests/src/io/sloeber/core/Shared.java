@@ -165,6 +165,7 @@ public class Shared {
 			compileOptions.setEnableParallelBuild(true);
 			theTestProject = boardDescriptor.createProject(projectName, null, codeDescriptor, compileOptions, monitor);
 			waitForAllJobsToFinish(); // for the indexer
+			Thread.sleep(2000); //for the index listener
 		} catch (Exception e) {
 			e.printStackTrace();
 			myLastFailMessage = "Failed to create the project:" + projectName;
