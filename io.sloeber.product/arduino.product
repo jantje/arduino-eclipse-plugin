@@ -300,7 +300,6 @@ rights to a jury trial in any resulting litigation.&lt;/p&gt;
       <feature id="org.eclipse.cdt.autotools"/>
       <feature id="org.eclipse.cdt.gdb"/>
       <feature id="org.eclipse.cdt.gnu.build"/>
-      <feature id="org.eclipse.cdt.gnu.debug"/>
       <feature id="org.eclipse.cdt.gnu.dsf"/>
       <feature id="org.eclipse.cdt.platform"/>
       <feature id="org.eclipse.e4.rcp"/>
